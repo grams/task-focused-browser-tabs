@@ -1,0 +1,26 @@
+{
+  "manifest_version": 2,
+  "name": "Task-focused browser tabs",
+  "description": "Opens all tabs needed for a task, and saves them for later when switching to another task.",
+  "version": "1.0.0",
+  "browser_action": {
+    "default_icon": {
+      "16": "icon16.png",
+      "24": "icon24.png",
+      "32": "icon32.png"
+    }
+  },
+  "background": {
+    "scripts": [
+      "eventPage.js"
+    ],
+    "persistent": false
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "https://ajax.googleapis.com/"
+  ],
+  "content_security_policy": "script-src 'self' https://ajax.googleapis.com; object-src 'self'"
+}
