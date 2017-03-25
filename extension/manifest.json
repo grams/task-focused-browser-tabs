@@ -1,15 +1,28 @@
 {
   "manifest_version": 2,
-  "name": "Task-focused browser tabs",
-  "description": "Opens all tabs needed for a task, and saves them for later when switching to another task.",
-  "version": "1.0.0",
+  "name": "__MSG_appName__",
+  "short_name": "Task-focused",
+  "version": "0.1.1",
+  "description": "__MSG_appDesc__",
+  "author": "Guillaume Rams",
+  "homepage_url": "http://www.schwinl.net/",
+  "icons": {
+    "16": "icon16.png",
+    "24": "icon24.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "browser_action": {
     "default_icon": {
       "16": "icon16.png",
       "24": "icon24.png",
-      "32": "icon32.png"
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
     }
   },
+  "default_locale": "en",
   "background": {
     "scripts": [
       "eventPage.js"
@@ -19,8 +32,6 @@
   "permissions": [
     "activeTab",
     "tabs",
-    "storage",
-    "https://ajax.googleapis.com/"
-  ],
-  "content_security_policy": "script-src 'self' https://ajax.googleapis.com; object-src 'self'"
+    "storage"
+  ]
 }

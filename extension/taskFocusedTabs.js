@@ -238,6 +238,12 @@ function addBtn(aTask, atFirstPosition) {
             }
         }
 
+        // Jump first?
+        var jumpToFirstOnActivation = true;
+        if (jumpToFirstOnActivation) {
+            $task.prependTo("#tasks");
+        }
+
         // Now open all tabs of selected task
         var index = $task.index();
         var tabs = $task.data("tabs");
@@ -337,6 +343,8 @@ function init() {
 $(function () {
     console.debug("INIT");
 
+    translate();
+
     chrome.storage.sync.get(null, function (items) {
         if (chrome.runtime.lastError) {
             console.error("Error while reading tasks from storage:", chrome.runtime.lastError);
@@ -392,11 +400,16 @@ $(function () {
         }
         else {
             var tasksMatching = $tasks.find("li .title").each(function () {
-                if ($(this).text().toLocaleLowerCase().indexOf(matchString) != -1) {
+                if ($(this).parent().hasClass("active")) {
                     $(this).parent().show();
                 }
                 else {
-                    $(this).parent().hide();
+                    if ($(this).text().toLocaleLowerCase().indexOf(matchString) != -1) {
+                        $(this).parent().show();
+                    }
+                    else {
+                        $(this).parent().hide();
+                    }
                 }
             });
             var tasksMatching = $templates.find("li .title").each(function () {
@@ -552,3 +565,19 @@ $(function () {
         });
     });
 });
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// Translate UI
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function translate() {
+    console.debug("Translation");
+    $("#input-add").attr("placeholder", chrome.i18n.getMessage("input_add_placeholder"));
+    $("#TasksLabel").text(chrome.i18n.getMessage("TasksLabel"));
+    $("#TemplatesLabel").text(chrome.i18n.getMessage("TemplatesLabel"));
+    $("#renameTaskContextMenuLabel").text(chrome.i18n.getMessage("renameTaskContextMenu"));
+    $("#duplicateTaskContextMenuLabel").text(chrome.i18n.getMessage("duplicateTaskContextMenu"));
+    $("#templateTaskContextMenuLabel").text(chrome.i18n.getMessage("templateTaskContextMenu"));
+    $("#deleteTaskContextMenuLabel").text(chrome.i18n.getMessage("deleteTaskContextMenu"));
+    $("#cloneTemplateContextMenuLabel").text(chrome.i18n.getMessage("cloneTemplateContextMenu"));
+    $("#deleteTemplateContextMenuLabel").text(chrome.i18n.getMessage("deleteTemplateContextMenu"));
+}

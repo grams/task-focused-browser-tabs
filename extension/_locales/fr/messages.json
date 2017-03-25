@@ -1,0 +1,35 @@
+{
+  "appName": {
+    "message": "Task-focused browser tabs"
+  },
+  "appDesc": {
+    "message": "Ouvre tous les onglets nécessaires quand on ouvre une tâche, puis les sauve pour plus tard quand on change de tâche."
+  },
+  "input_add_placeholder": {
+    "message": "Chercher..."
+  },
+  "TasksLabel": {
+    "message": "Tâches"
+  },
+  "TemplatesLabel": {
+    "message": "Modèles"
+  },
+  "renameTaskContextMenu": {
+    "message": "Renommer"
+  },
+  "duplicateTaskContextMenu": {
+    "message": "Dupliquer"
+  },
+  "templateTaskContextMenu": {
+    "message": "Faire un modèle"
+  },
+  "deleteTaskContextMenu": {
+    "message": "Supprimer"
+  },
+  "cloneTemplateContextMenu": {
+    "message": "Créer une tâche"
+  },
+  "deleteTemplateContextMenu": {
+    "message": "Supprimer"
+  }
+}

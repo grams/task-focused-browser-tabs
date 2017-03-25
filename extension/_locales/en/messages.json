@@ -1,0 +1,35 @@
+{
+  "appName": {
+    "message": "Task-focused browser tabs"
+  },
+  "appDesc": {
+    "message": "Opens all tabs needed for a task, and saves them for later when switching to another task."
+  },
+  "input_add_placeholder": {
+    "message": "Search..."
+  },
+  "TasksLabel": {
+    "message": "Tasks"
+  },
+  "TemplatesLabel": {
+    "message": "Templates"
+  },
+  "renameTaskContextMenu": {
+    "message": "Rename"
+  },
+  "duplicateTaskContextMenu": {
+    "message": "Duplicate"
+  },
+  "templateTaskContextMenu": {
+    "message": "Make template"
+  },
+  "deleteTaskContextMenu": {
+    "message": "Delete"
+  },
+  "cloneTemplateContextMenu": {
+    "message": "Create task"
+  },
+  "deleteTemplateContextMenu": {
+    "message": "Delete"
+  }
+}
