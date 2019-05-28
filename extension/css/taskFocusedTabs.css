@@ -1,0 +1,57 @@
+.tasks-list {
+    padding: 5px;
+    height: 100%;
+}
+
+.task .title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.list-label button {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-color: var(--light);
+}
+
+.list-group-item.active {
+    color: var(--secondary) !important;
+}
+
+.btn-label {
+    background-color: var(--success) !important;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.btn-label:hover {
+    border-color: var(--success) !important;
+}
+
+.col-3 {
+    /*
+     max-width: 400 px;
+     */
+    padding-left: 16px;
+    padding-right: 0;
+}
+
+.row {
+    padding-right: 16px;
+}
+
+.dropdown-toggle {
+}
+
+/*
+247BA0 LAPIS LAZULI
+C6D6B8 PALE SILVER
+87A878 ASPARAGUS
+F15025 FLAME
+E3AD40 MEAT BROWN
+FCD036 SUNGLOW
+F8F7F7 WHITE SMOKE
+987F69 BEAVER
+ */

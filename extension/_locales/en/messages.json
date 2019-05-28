@@ -11,17 +11,11 @@
   "TasksLabel": {
     "message": "Tasks"
   },
-  "TemplatesLabel": {
-    "message": "Templates"
-  },
   "renameTaskContextMenu": {
     "message": "Rename"
   },
   "duplicateTaskContextMenu": {
     "message": "Duplicate"
-  },
-  "templateTaskContextMenu": {
-    "message": "Make template"
   },
   "deleteTaskContextMenu": {
     "message": "Delete"
@@ -29,7 +23,10 @@
   "cloneTemplateContextMenu": {
     "message": "Create task"
   },
-  "deleteTemplateContextMenu": {
-    "message": "Delete"
+  "please_enter_new_label": {
+    "message": "Please enter new label"
+  },
+  "new_task": {
+    "message": "New task"
   }
 }

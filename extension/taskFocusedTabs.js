@@ -1,29 +1,33 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// Utilities
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* globals chrome, console, $, this */
+/* jshint esversion:6 */
+"use strict";
 
-// What the Heck is that language and those libraries?!? :'-(
+// Not a JavaScript fan and it shows
 $.fn.exists = function () {
     return this.length > 0;
 };
 
-var extensionURL = chrome.extension.getURL("taskFocusedTabs.html");
+const extensionURL = chrome.extension.getURL("taskFocusedTabs.html");
+
 function isTasksTab(tab) {
-    "use strict";
     return tab.url.replace(/#*$/, "") === extensionURL;
 }
 
 function dedupTaskNames(text) {
-    "use strict";
     if (!text.trim()) {
-        text = "New task";
+        text = chrome.i18n.getMessage("new_task");
     }
 
-    var tasksNames = $tasks.find("li .title").map(function () {
-        return $(this).text();
+    const tasksNames = [];
+    $("li.task").each(function () {
+        tasksNames.push($(this).taskGetLabel());
     });
+
     if ($.inArray(text, tasksNames) >= 0) {
-        var count = 1;
+        let count = 1;
         while ($.inArray(text + " (" + count + ")", tasksNames) >= 0) {
             count++;
             // Sanity check
@@ -36,38 +40,51 @@ function dedupTaskNames(text) {
     return text;
 }
 
-function getTasksAsArray($aTasksList, $aTemplateList) {
-    "use strict";
-    var reorderedFocus = {};
-    var i = 0;
-    $aTasksList.find("li").each(function () {
-        reorderedFocus[i] = $(this).taskGetObject();
-        reorderedFocus[i].kind = "T";
-        i++;
+/**
+ * One may wonder why such a convoluted way of storing data in google sync.
+ * The straightforward approach who be a single tree-like structure in a single key-value pair, but this approach fails
+ * because of the (small actually) limit on the size of a value.
+ * The solution is to turn the structure into a very flat list of key-values, using a counter for keys and objects as
+ * values.
+ */
+function getFlattenedTasksDict() {
+    const flattenedMap = {};
+    let i = 0;
+    $("li.task").each(function () {
+        const aTask = $(this).taskGetObject();
+        aTask.kind = $(this).taskGetKind(); //FIXME
+        flattenedMap[i++] = aTask;
     });
-    $aTemplateList.find("li").each(function () {
-        reorderedFocus[i] = $(this).taskGetObject();
-        reorderedFocus[i].kind = "A";
-        i++;
-    });
-    return reorderedFocus;
+
+    // Now hide config within tasks
+    flattenedMap[i++] = {
+        label: '__config__',
+        kind: '_',
+        tabs: [
+            $('#TLabel .btn').text().trim(),
+            $('#ALabel .btn').text().trim(),
+            $('#SLabel .btn').text().trim(),
+            $('#KLabel .btn').text().trim()
+        ]
+    };
+
+    return flattenedMap;
 }
 
 // Save Tasks ----------------------------------------------------------------------------------------------------------
 function saveTasks() {
-    "use strict";
-    var tasksArray = getTasksAsArray($tasks, $templates);
+    const tasksArray = getFlattenedTasksDict();
 
     // Save it using the Chrome extension storage API.
-    console.log("Saving tabs", tasksArray);
+    console.debug("Saving tabs data...", tasksArray);
 
     chrome.storage.sync.set(
         tasksArray,
         function () {
             if (chrome.runtime.lastError) {
-                console.error("Error while saving tabs", chrome.runtime.lastError);
+                console.error("Error while saving tabs: " + chrome.runtime.lastError.message, chrome.runtime.lastError);
             } else {
-                console.log("Tabs saved");
+                console.info("Tabs data saved.");
             }
         });
     // Saving will not remove past entries
@@ -75,51 +92,37 @@ function saveTasks() {
         Object.keys(tasksArray).length.toString(),
         function () {
             if (chrome.runtime.lastError) {
-                console.debug("No entry to delete", chrome.runtime.lastError);
+                console.debug("No entry to delete: " + chrome.runtime.lastError.message, chrome.runtime.lastError);
             } else {
-                console.log("Removed template");
+                console.debug("Removed last past entry.");
             }
         });
 }
 
-/*
- chrome.storage.onChanged.addListener(function (changes, namespace) {
- for (key in changes) {
- var storageChange = changes[key];
- console.log('Storage key "%s" in namespace "%s" changed. ' +
- 'Old value was "%s", new value is "%s".',
- key,
- namespace,
- storageChange.oldValue ? storageChange.oldValue.label : "-removed",
- storageChange.newValue ? storageChange.newValue.label : "-removed-");
- }
- });
- */
-
 function focusTabsRefresh(urls, isAllComplete) {
     try {
-        var $selectedTask = $tasks.find("li.active");
+        const $selectedTask = $("li.task.active").first();
         if (!$selectedTask.exists()) {
-            console.debug("No task currently active", $selectedTask);
+            console.debug("No task currently active.", $selectedTask);
             return;
         }
 
-        if ($selectedTask.css("fontStyle") == "italic") {
+        if ("italic" === $selectedTask.css("fontStyle")) {
             if (isAllComplete) {
                 $selectedTask.css("fontStyle", "normal");
-                console.debug("All tabs load completed");
+                console.debug("All tabs have finished loading.");
                 // and continue...
             } else {
                 // We are still loading after a task switch. Too soon!
-                console.debug("We are still loading after a task switch ; too soon to update tasks");
+                console.debug("We are still loading after a task switch; too soon to update tasks...");
                 return;
             }
         }
 
-        var index = $selectedTask.find(".title").text();
-        var _focusdirty_ = true; //FIXME
+        const index = $selectedTask.find(".title").text();
+        let _focusdirty_ = true; //FIXME
         if (_focusdirty_) {
-            console.log("Updating tabs for task: " + index);
+            console.log("Updating tabs data for task: " + index);
             // FIXME ?
             //_focus_[index] = urls;
             $.data($selectedTask.get(0), "tabs", urls);
@@ -129,18 +132,18 @@ function focusTabsRefresh(urls, isAllComplete) {
             saveTasks();
         }
     } catch (e) {
-        console.error("Error in focusTabsRefresh", e);
+        console.error("Error in focusTabsRefresh!", e);
     }
 }
 
 function moveTabOutOfTask(aTab) {
-    console.log("Moving new tab " + aTab.tabId + " out of active task tabs: ", aTab);
+    console.info("Moving new tab " + aTab.tabId + " out of active task tabs: ", aTab);
 
     chrome.tabs.query({
         currentWindow: true
     }, function (tabs) {
         try {
-            for (var tab of tabs) {
+            for (const tab of tabs) {
                 if (isTasksTab(tab)) {
                     chrome.tabs.move(aTab.id, {
                         index: tab.index
@@ -149,7 +152,7 @@ function moveTabOutOfTask(aTab) {
                 }
             }
         } catch (e) {
-            console.error("Error while preserving new tab", e);
+            console.error("Error while moving new tab!", e);
         }
     });
 }
@@ -158,33 +161,40 @@ function moveTabOutOfTask(aTab) {
 //// Task kinda-class
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 $.fn.taskGetLabel = function () {
-    "use strict";
     return this.find(".title").text();
 };
 $.fn.taskGetCount = function () {
-    "use strict";
     return parseInt(this.find(".badge").text());
 };
 $.fn.taskSetLabel = function (aLabel) {
-    "use strict";
     return this.find(".title").text(aLabel);
 };
 $.fn.taskGetObject = function (aKind) {
-    "use strict";
     return {label: this.find(".title").text(), kind: aKind, tabs: this.data("tabs")};
 };
+$.fn.taskGetKind = function () {
+    return this.parent().attr('id');
+};
+$.fn.taskShow = function () {
+    return this.addClass('d-flex').show();
+};
+$.fn.taskHide = function () {
+    return this.removeClass('d-flex').hide();
+};
+
 
 function closeTaskTabs($previous) {
+    console.debug("Closing tabs for task " + $previous.taskGetLabel());
     $previous.removeClass("active"); // previous list-item
 
     chrome.tabs.query({
         currentWindow: true
     }, function (tabs) {
         try {
-            var taskFocusedTabsTab = null;
-            var tabsToRemove = [];
-            for (var tab of tabs) {
-                if (taskFocusedTabsTab == null) {
+            let taskFocusedTabsTab = null;
+            const tabsToRemove = [];
+            for (const tab of tabs) {
+                if (taskFocusedTabsTab === null) {
                     if (isTasksTab(tab)) {
                         taskFocusedTabsTab = tab;
                     }
@@ -197,7 +207,6 @@ function closeTaskTabs($previous) {
             });
         } catch (e) {
             console.error("Error while removing tabs", e);
-        } finally {
         }
     });
 }
@@ -206,29 +215,32 @@ function closeTaskTabs($previous) {
 //// TasksList kinda-class
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function addBtn(aTask, atFirstPosition) {
+function addBtn(aTask, kind, atFirstPosition) {
+    if (!kind) {
+        return;
+    }
+
     atFirstPosition = atFirstPosition || false;
 
-    var count = aTask.tabs.length;
-    var text = aTask.label;
+    const count = aTask.tabs.length;
+    const text = aTask.label;
 
-    var $btn = $("<li type='button' class='list-group-item'><span class='badge'>" + count + "</span><span class='title'>" + text + "</span></li>");
+    const $btn = $("<li type='button' class='task list-group-item list-group-item-action d-flex justify-content-between align-items-center'><span class='title'>" + text + "</span><span class='badge badge-secondary badge-pill'>" + count + "</span></li>");
     if (atFirstPosition) {
-        $btn.prependTo("#tasks");
-    }
-    else {
-        $btn.appendTo("#tasks");
+        $btn.prependTo($("#" + kind));
+    } else {
+        $btn.appendTo($("#" + kind));
     }
 
     $btn.data("tabs", aTask.tabs);
     $btn.on("dblclick", null, {
         "index": text
     }, function (event) {
-        //$tasks.tasksListActivateTask($(this));
-        var $task = $(this);
+        const $task = $(this);
 
         // Close tabs of previously selected task
-        var $previous = $tasks.children(".active")
+        console.debug("Double-click on task " + $task.taskGetLabel());
+        const $previous = $("li.task.active").first();
         if ($previous.exists()) {
             closeTaskTabs($previous);
 
@@ -239,20 +251,20 @@ function addBtn(aTask, atFirstPosition) {
         }
 
         // Jump first?
-        var jumpToFirstOnActivation = true;
+        const jumpToFirstOnActivation = true;
         if (jumpToFirstOnActivation) {
-            $task.prependTo("#tasks");
+            $task.prependTo($task.parent());
         }
 
         // Now open all tabs of selected task
-        var index = $task.index();
-        var tabs = $task.data("tabs");
+        const index = $task.index();
+        const tabs = $task.data("tabs");
         if (tabs.length > 0) {
             $task.css("fontStyle", "italic");
         }
-        console.log("Opening " + tabs.length + " tabs for task " + index + ": " + $task.taskGetLabel());
+        console.debug("Opening " + tabs.length + " tabs for task " + index + ": " + $task.taskGetLabel());
 
-        var recursiveOpenTabs = function (remainingUrlsArray, $aTask) {
+        const recursiveOpenTabs = function (remainingUrlsArray, $aTask) {
             if (remainingUrlsArray.length === 0) {
                 $aTask.addClass("active"); // activated list-item
             } else {
@@ -269,115 +281,77 @@ function addBtn(aTask, atFirstPosition) {
 
     // Popup task context menu
     $btn.on("contextmenu", null, function (event) {
-        $templateContextMenu.hide();
-
-        $taskContextMenu.css({
+        $("#taskContextMenu").css({
             display: "block",
             left: event.pageX,
             top: event.pageY
         });
-        console.debug("Context menu on task " + $(event.currentTarget).index());
-        $taskContextMenu.data("target", $(event.currentTarget).index());
+        console.debug("Context menu on task: " + $(event.currentTarget).taskGetLabel());
+        $(".list-label.show").dropdown('hide');
+        $("#taskContextMenu").data({
+            "kind": $(event.currentTarget).taskGetKind(),
+            "index": $(event.currentTarget).index()
+        });
         return false;
     });
 }
 
 $.fn.tasksListRemoveTaskAt = function (aTaskIndex) {
-    "use strict";
     this.find("li").eq(aTaskIndex).remove();
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// Templates kinda-class
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-$.fn.templatesAddTask = function (aTask, atFirstPosition) {
-    atFirstPosition = atFirstPosition || false;
-
-    var count = aTask.tabs.length;
-    var text = aTask.label;
-
-    var $btn = $("<li type='button' class='list-group-item Template'><span class='badge'>" + count + "</span><span class='title'>" + text + "</span></li>");
-    if (atFirstPosition) {
-        $btn.prependTo("#templates");
-    }
-    else {
-        $btn.appendTo("#templates");
-    }
-
-    $btn.data("tabs", aTask.tabs);
-    $btn.on("dblclick", null, {
-        "index": text
-    }, function (event) {
-        var index = $(event.currentTarget).index();
-        console.debug("dblClick on task " + index);
-        var $template = $templates.find("li").eq(index);
-        console.log("Cloning task from template: " + $template.taskGetLabel());
-        addBtn($template.taskGetObject(), true);
-        saveTasks();
-        return false;
-    });
-
-    // Popup template context menu
-    $btn.on("contextmenu", null, function (event) {
-        var index = $(event.currentTarget).index();
-        console.debug("Context menu on task " + index);
-        $taskContextMenu.hide();
-        $templateContextMenu.css({
-            display: "block",
-            left: event.pageX,
-            top: event.pageY
-        });
-        $templateContextMenu.data("target", index);
-        return false;
-    });
-};
-
-
-function init() {
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// Init & jQueryUI setup
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 $(function () {
-    console.debug("INIT");
-
     translate();
 
     chrome.storage.sync.get(null, function (items) {
         if (chrome.runtime.lastError) {
-            console.error("Error while reading tasks from storage:", chrome.runtime.lastError);
-            //FIXME ERROR INSTEAD
+            console.error("Error while reading tasks from storage: " + chrome.runtime.lastError.message, chrome.runtime.lastError);
+            //FIXME ALERT ERROR INSTEAD
         } else {
-            console.log("Read tasks from storage: ", items);
-            for (var index in items) {
-                var task = items[index];
-                if (task.kind == "T") {
-                    addBtn(task);
+            console.info("Read tasks from storage: ", items);
+            for (let index in items) {
+                if (items.hasOwnProperty(index)) { // I miss Python
+                    const task = items[index];
+                    if ("_" === task.kind) {
+                        // Yeah some config here, not tasks
+                        if (task.tabs.length > 3) {
+                            $('#TLabel .btn').text(task.tabs[0] + " ");
+                            $('#ALabel .btn').text(task.tabs[1] + " ");
+                            $('#SLabel .btn').text(task.tabs[2] + " ");
+                            $('#KLabel .btn').text(task.tabs[3] + " ");
+                        }
+                    } else {
+                        addBtn(task, task.kind);
+                    }
                 }
-                else {
-                    $templates.templatesAddTask(task);
-                }
+            }
+            // Default values
+            if (!$('#TLabel').text()) {
+                const defaultLabel = chrome.i18n.getMessage("TasksLabel");
+                $('.list-label').each(function () {
+                    $(this).text(defaultLabel);
+                });
             }
         }
     });
 
-    $tasks = $("#tasks");
-    $templates = $("#templates");
-    $taskContextMenu = $("#taskContextMenu");
-    $templateContextMenu = $("#templateContextMenu");
-
-    // Disable selection //
-    $tasks.disableSelection().css("cursor", "default");
-    $tasks.sortable({
-        update: function (event, ui) {
-            saveTasks();
-        }
+    $(".tasks-list").each(function () {
+        const $tasks = $(this);
+        // Disable selection //
+        $tasks.disableSelection().css("cursor", "default");
+        $tasks.sortable({
+            connectWith: ".tasks-list",
+            dropOnEmpty: true,
+            update: function (event, ui) {
+                saveTasks();
+            }
+        });
     });
-    $templates.disableSelection().css("cursor", "default");
-    $taskContextMenu.disableSelection().css("cursor", "default");
-    $templateContextMenu.disableSelection().css("cursor", "default");
+    $("#taskContextMenu").disableSelection().css("cursor", "default");
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -386,74 +360,71 @@ $(function () {
 
     // Autosearch ------------------------------------------------------------------------------------------------------
     $("#input-add").on("input", function () {
-        "use strict";
-        var matchString = $("#input-add").val().trim().toLocaleLowerCase();
-        console.debug("matchString:" + matchString);
-        if (matchString.length < 2) {
-            $tasks.find("li").each(function () {
-                $(this).show();
+        const matchString = $("#input-add").val().trim().toLocaleLowerCase();
+        console.debug("searching for:" + matchString);
+        if (matchString.length < 1) {
+            $("li.task").each(function () {
+                $(this).taskShow();
             });
-            $templates.find("li").each(function () {
-                $(this).show();
-            });
-
-        }
-        else {
-            var tasksMatching = $tasks.find("li .title").each(function () {
+        } else {
+            $("li.task .title").each(function () {
                 if ($(this).parent().hasClass("active")) {
-                    $(this).parent().show();
-                }
-                else {
-                    if ($(this).text().toLocaleLowerCase().indexOf(matchString) != -1) {
-                        $(this).parent().show();
+                    $(this).parent().taskShow();
+                } else {
+                    if ($(this).text().toLocaleLowerCase().indexOf(matchString) !== -1) {
+                        $(this).parent().taskShow();
+                    } else {
+                        $(this).parent().taskHide();
                     }
-                    else {
-                        $(this).parent().hide();
-                    }
-                }
-            });
-            var tasksMatching = $templates.find("li .title").each(function () {
-                if ($(this).text().toLocaleLowerCase().indexOf(matchString) != -1) {
-                    $(this).parent().show();
-                }
-                else {
-                    $(this).parent().hide();
                 }
             });
         }
     });
     $("#input-add").keydown(function (event) {
-        "use strict";
-        console.debug(event);
-        if (event.keyCode == 27) { // escape key maps to keycode `27`
+        if (event.keyCode === 27) { // escape key
             $("#input-add").val("");
-            $("#input-add").trigger("input");
+            $("li.task").each(function () {
+                $(this).taskShow();
+            });
+        }
+        if (event.keyCode === 13) { // enter key
+            addTaskFromInput();
+            return false;
         }
     });
 
-    // Button ADD ------------------------------------------------------------------------------------------------------
-    $("#btn-add").on("click", function (event) {
-        var $inputadd = $("#input-add");
-        var text = dedupTaskNames($inputadd.val());
+    function addTaskFromInput() {
+        const $inputadd = $("#input-add");
+        const text = dedupTaskNames($inputadd.val());
 
+        console.info("Creating task: " + text);
         addBtn({
             label: text,
             tabs: ["chrome://newtab"]
-        }, true);
+        }, "T", true);
 
         $inputadd.val("");
-        $inputadd.trigger("input");
+        $("li.task").each(function () {
+            $(this).taskShow();
+        });
+    }
+
+// Button ADD ------------------------------------------------------------------------------------------------------
+    $("#btn-add").on("click", function (event) {
+        addTaskFromInput();
+        return false;
     });
 
     // Advanced buttons re:JSON ----------------------------------------------------------------------------------------
     $("#btn-show-data").on("click", function (event) {
-        $("#jsontext").val(JSON.stringify(getTasksAsArray($tasks, $templates)));
+        $("#jsontext").val(JSON.stringify(getFlattenedTasksDict()));
     });
 
-    $("#btn-save-data").on("click", function (event) {
-        var json = JSON.parse($("#jsontext").val());
 
-        if (confirm("WARNING! This will overwrite all tasks and their tabs by the data in the box below. Proceed?")) {
+    $("#btn-save-data").on("click", function (event) {
+        const json = JSON.parse($("#jsontext").val());
+
+        if (window.confirm("WARNING! This will overwrite all tasks and their tabs by the data in the box below. Proceed?")) {
             // Save it using the Chrome extension storage API.
             console.info("Saving tabs", json);
             chrome.storage.sync.clear();
@@ -473,8 +444,10 @@ $(function () {
 
     // Popup task context menu -----------------------------------------------------------------------------------------
     function processTaskContextMenu(event, action) {
-        var index = $taskContextMenu.data("target");
-        var $task = $tasks.find("li").eq(index);
+        const kind = $("#taskContextMenu").data("kind");
+        const index = $("#taskContextMenu").data("index");
+        const $task = $("#" + kind).find("li.task").eq(index).first();
+        console.assert($task.exists(), "Can't find clicked task?!?");
         if (action(index, $task)) {
             saveTasks();
         }
@@ -484,36 +457,25 @@ $(function () {
 
     $("#deleteTaskContextMenu").on("click", null, function (event) {
         return processTaskContextMenu(event, function (index, $task) {
-            "use strict";
             if ($task.hasClass("active")) {
                 closeTaskTabs($task);
             }
-            var count = $task.taskGetCount();
-            console.log("Deleting task that had " + count + " tabs");
-            $tasks.tasksListRemoveTaskAt(index);
-            return true;
-        });
-    });
-
-    $("#templateTaskContextMenu").on("click", null, function (event) {
-        return processTaskContextMenu(event, function (index, $task) {
-            "use strict";
-            if ($task.hasClass("active")) {
-                closeTaskTabs($task);
-            }
-            console.log("Templating task", $task);
-            $templates.templatesAddTask($task.taskGetObject(), true);
-            $tasks.tasksListRemoveTaskAt(index);
+            console.info("Deleting task: " + $task.taskGetLabel() + " with " + $task.taskGetCount() + " tabs.");
+            console.debug(index);
+            $task.parent().tasksListRemoveTaskAt(index);
             return true;
         });
     });
 
     $("#renameTaskContextMenu").on("click", null, function (event) {
         return processTaskContextMenu(event, function (index, $task) {
-            "use strict";
-            var name = prompt("Please enter new label", $task.taskGetLabel());
-            if (name == null)
+            const name = window.prompt(chrome.i18n.getMessage("please_enter_new_label"), $task.taskGetLabel());
+            if (name === null) {
                 return false;
+            }
+            if (name === $task.taskGetLabel()) {
+                return false;
+            }
             $task.taskSetLabel(dedupTaskNames(name));
             return true;
         });
@@ -521,10 +483,10 @@ $(function () {
 
     $("#duplicateTaskContextMenu").on("click", null, function (event) {
         return processTaskContextMenu(event, function (index, $task) {
-            "use strict";
-            var task = $task.taskGetObject();
+            const task = $task.taskGetObject();
             task.label = dedupTaskNames(task.label);
-            addBtn(task, true);
+            console.info({"Creating duplicate ": task.label, "kind": $task.taskGetKind()});
+            addBtn(task, $task.taskGetKind(), true);
             return true;
         });
     });
@@ -532,52 +494,55 @@ $(function () {
 
     // Popup template context menu --------------------------------------------------------------------------------------
     $(document).click(function (e) {
-        $taskContextMenu.hide();
-        $templateContextMenu.hide();
+        $("#taskContextMenu").hide();
     });
 
-    function processTemplateContextMenu(event, action) {
-        var index = $templateContextMenu.data("target");
-        var $template = $templates.find("li").eq(index);
-        if (action(index, $template)) {
-            saveTasks();
+    $(".list-label").on('show.bs.dropdown', function (e) {
+        $("#taskContextMenu").hide();
+    });
+
+
+    /*
+        $("#cloneTemplateContextMenu").on("click", null, function (event) {
+            return processTemplateContextMenu(event, function (index, $template) {
+                console.log("Cloning task from templates: " + $template.taskGetLabel());
+                const task = $template.taskGetObject();
+                task.label = dedupTaskNames(task.label);
+                addBtn(task, "T", true);
+                return true;
+            });
+        });
+
+     */
+
+    // Row label context menu --------------------------------------------------------------------------------------
+    $(".rename-row").on("click", null, function (event) {
+        const $rowlabel = $(event.currentTarget).closest(".list-label").find(".btn").first();
+        $rowlabel.parent().dropdown('hide');
+        const previousText = $rowlabel.text().trimRight()
+        var name = window.prompt(chrome.i18n.getMessage("please_enter_new_label"), previousText);
+        if (name === null) {
+            return false;
         }
-        return true;
-    }
-
-    $("#cloneTemplateContextMenu").on("click", null, function (event) {
-        return processTemplateContextMenu(event, function (index, $template) {
-            "use strict";
-            console.log("Cloning task from templates: " + $template.taskGetLabel());
-            var task = $template.taskGetObject();
-            task.label = dedupTaskNames(task.label);
-            addBtn(task, true);
-            return true;
-        });
+        name = name.trim();
+        if (name === previousText) {
+            return false;
+        }
+        $rowlabel.text(name + " ");
+        saveTasks();
+        return false;
     });
 
-    $("#deleteTemplateContextMenu").on("click", null, function (event) {
-        return processTemplateContextMenu(event, function (index, $template) {
-            "use strict";
-            console.log("Deleting task from templates: " + $template.taskGetLabel());
-            $templates.tasksListRemoveTaskAt(index);
-            return true;
-        });
-    });
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// Translate UI
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 function translate() {
-    console.debug("Translation");
+    console.debug("Translation...");
     $("#input-add").attr("placeholder", chrome.i18n.getMessage("input_add_placeholder"));
-    $("#TasksLabel").text(chrome.i18n.getMessage("TasksLabel"));
-    $("#TemplatesLabel").text(chrome.i18n.getMessage("TemplatesLabel"));
     $("#renameTaskContextMenuLabel").text(chrome.i18n.getMessage("renameTaskContextMenu"));
     $("#duplicateTaskContextMenuLabel").text(chrome.i18n.getMessage("duplicateTaskContextMenu"));
-    $("#templateTaskContextMenuLabel").text(chrome.i18n.getMessage("templateTaskContextMenu"));
     $("#deleteTaskContextMenuLabel").text(chrome.i18n.getMessage("deleteTaskContextMenu"));
     $("#cloneTemplateContextMenuLabel").text(chrome.i18n.getMessage("cloneTemplateContextMenu"));
-    $("#deleteTemplateContextMenuLabel").text(chrome.i18n.getMessage("deleteTemplateContextMenu"));
 }

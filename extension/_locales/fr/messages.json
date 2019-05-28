@@ -11,17 +11,11 @@
   "TasksLabel": {
     "message": "Tâches"
   },
-  "TemplatesLabel": {
-    "message": "Modèles"
-  },
   "renameTaskContextMenu": {
     "message": "Renommer"
   },
   "duplicateTaskContextMenu": {
     "message": "Dupliquer"
-  },
-  "templateTaskContextMenu": {
-    "message": "Faire un modèle"
   },
   "deleteTaskContextMenu": {
     "message": "Supprimer"
@@ -29,7 +23,10 @@
   "cloneTemplateContextMenu": {
     "message": "Créer une tâche"
   },
-  "deleteTemplateContextMenu": {
-    "message": "Supprimer"
+  "please_enter_new_label": {
+    "message": "Veuillez saisir un nouveau nom"
+  },
+  "new_task": {
+    "message": "Nouvelle tâche"
   }
 }
