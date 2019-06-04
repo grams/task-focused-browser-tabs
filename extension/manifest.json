@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "__MSG_appName__",
   "short_name": "Task-focused",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "__MSG_appDesc__",
   "author": "Guillaume Rams",
   "homepage_url": "http://www.schwinl.net/",
