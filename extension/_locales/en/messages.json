@@ -28,5 +28,14 @@
   },
   "new_task": {
     "message": "New task"
+  },
+  "jump_to_first": {
+    "message": "Jump first"
+  },
+  "open_task": {
+    "message": "Open task"
+  },
+  "clone_task": {
+    "message": "Clone task"
   }
 }

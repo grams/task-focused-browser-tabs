@@ -1,6 +1,12 @@
 {
   "globals": {
     "$": false,
-    "chrome": false
-  }
+    "chrome": false,
+    "console": false,
+    "document": false,
+    "this": false,
+    "window": false
+  },
+  "strict": "global",
+  "esversion": 6
 }

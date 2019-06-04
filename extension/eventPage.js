@@ -1,11 +1,17 @@
-//// Utilities ---------------------------------------------------------------------------------------------------------
+"use strict";
 
-taskFocusedTabsURL = chrome.extension.getURL("taskFocusedTabs.html");
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// Utilities
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const taskFocusedTabsURL = chrome.extension.getURL("taskFocusedTabs.html");
 function isTasksTab(tab) {
     return (tab.url.replace(/#*$/, "") == taskFocusedTabsURL);
 }
 
-//// Extension actions -------------------------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// Extension actions
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Extension button clicked
 chrome.browserAction.onClicked.addListener(function (activeTab) {
@@ -51,7 +57,7 @@ function refresh(windowId) {
                 }
             }
             if (taskFocusedTabsTab != null) {
-                view = chrome.extension.getViews({
+                const view = chrome.extension.getViews({
                     type: 'tab',
                     windowId: windowId
                 })[0];
@@ -65,7 +71,9 @@ function refresh(windowId) {
     });
 }
 
-//// Listeners on all tab operations that call refresh(windowId) -------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// Listeners on all tab operations that call refresh(windowId)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Loaded
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
@@ -77,7 +85,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     console.debug("Updated tab: " + tabId, changeInfo, tab);
 
     if (isTasksTab(tab)) {
-        taskFocusedTab = tab;
+        const taskFocusedTab = tab;
         return;
     }
 
@@ -101,7 +109,7 @@ chrome.tabs.onCreated.addListener(function (tab) {
     console.debug("Created tab " + tab.id + ": " + tab.url, tab);
 
     if (!tab.openerTabId && tab.active) {
-        view = chrome.extension.getViews({
+        const view = chrome.extension.getViews({
             type: 'tab',
             windowId: tab.windowId
         })[0];

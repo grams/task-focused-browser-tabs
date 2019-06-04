@@ -1,22 +1,9 @@
-.tasks-list {
-    padding: 5px;
+body {
+}
+
+#main {
     height: 100%;
-}
-
-.task .title {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-.list-label button {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    border-color: var(--light);
-}
-
-.list-group-item.active {
-    color: var(--secondary) !important;
+    min-height: 100vh;
 }
 
 .btn-label {
@@ -31,27 +18,52 @@
 }
 
 .col-3 {
-    /*
-     max-width: 400 px;
-     */
     padding-left: 16px;
     padding-right: 0;
+}
+
+.col-3 .flex-column {
+    height: 100%;
+}
+
+.dropdown-item input {
+    margin-right: 8px;
+    margin-left: -0.4rem;
+    position: unset;
+}
+
+.dropdown-toggle {
+}
+
+.i18n-on_double_click {
+    margin-left: 0.5rem;
 }
 
 .row {
     padding-right: 16px;
 }
 
-.dropdown-toggle {
+.list-group-item.active {
+    color: var(--secondary) !important;
 }
 
-/*
-247BA0 LAPIS LAZULI
-C6D6B8 PALE SILVER
-87A878 ASPARAGUS
-F15025 FLAME
-E3AD40 MEAT BROWN
-FCD036 SUNGLOW
-F8F7F7 WHITE SMOKE
-987F69 BEAVER
- */
+.list-label {
+}
+
+.list-label button.btn {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-color: var(--light);
+    text-align: left;
+    flex-grow: 0;
+}
+
+.task .title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.tasks-list {
+    padding: 5px;
+}

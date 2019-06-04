@@ -28,5 +28,14 @@
   },
   "new_task": {
     "message": "Nouvelle tâche"
+  },
+  "jump_to_first": {
+    "message": "Vers l'avant"
+  },
+  "open_task": {
+    "message": "Ouvrir tâche"
+  },
+  "clone_task": {
+    "message": "Dupliquer tâches"
   }
 }
