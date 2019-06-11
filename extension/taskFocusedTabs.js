@@ -415,8 +415,17 @@ $.fn.tasksListIsOpenOnDblClick = function () {
 $.fn.tasksListSetOpenOnDblClick = function (openOnDblClick) {
     this.prev().data(OPENTASK_DATA, openOnDblClick);
 };
+
+$.fn.tasksListLocateButton = function () {
+    return this.prev().find(".btn").first();
+};
+
 $.fn.tasksListSetLabel = function (newLabel) {
-    this.find('.btn').first().text(newLabel);
+    this.tasksListLocateButton().text(newLabel + " ");
+};
+
+$.fn.tasksListGetLabel = function () {
+    return this.tasksListLocateButton().text().trimRight();
 };
 
 $.fn.tasksListGetKind = function () {
@@ -439,8 +448,8 @@ $(function () {
             //FIXME ALERT ERROR INSTEAD
         } else {
             // Default values
-            const defaultLabel = chrome.i18n.getMessage("TasksLabel");
-            $('.tasks-list').each(function () {
+            const defaultLabel = chrome.i18n.getMessage("tasks");
+            $(TASKS_LIST_SELECTOR).each(function () {
                 $(this).tasksListSetOpenOnDblClick(true);
                 $(this).tasksListSetJumpToFirst(true);
                 $(this).tasksListSetLabel(defaultLabel);
@@ -448,7 +457,7 @@ $(function () {
             // Backwards compatibility from v0.1.x templates
             $("#A").tasksListSetOpenOnDblClick(false);
             $("#A").tasksListSetJumpToFirst(false);
-            $("#A").tasksListSetLabel("Templates" + " ");
+            $("#A").tasksListSetLabel(chrome.i18n.getMessage("templates"));
 
             console.info("Read tasks from storage: ", items);
             for (let index in items) {
@@ -695,9 +704,9 @@ $(function () {
 
     // Tasks list context menu --------------------------------------------------------------------------------------
     $(".rename-row").on("click", null, function (event) {
-        const $rowlabel = $(event.currentTarget).closest(LIST_LABEL_SELECTOR).find(".btn").first();
-        $rowlabel.parent().dropdown('hide');
-        const previousText = $rowlabel.text().trimRight();
+        const $tasksList = $(event.currentTarget).closest(LIST_LABEL_SELECTOR).next();
+        $tasksList.tasksListLocateButton().dropdown('hide');
+        const previousText = $tasksList.tasksListGetLabel();
         let name = window.prompt(chrome.i18n.getMessage("please_enter_new_label"), previousText);
         if (name === null) {
             return false;
@@ -706,7 +715,7 @@ $(function () {
         if (name === previousText) {
             return false;
         }
-        $rowlabel.text(name + " ");
+        $tasksList.tasksListSetLabel(name);
         saveExtensionData();
         return false;
     });

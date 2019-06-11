@@ -8,8 +8,11 @@
   "input_add_placeholder": {
     "message": "Chercher..."
   },
-  "TasksLabel": {
+  "tasks": {
     "message": "Tâches"
+  },
+  "templates": {
+    "message": "Modèles"
   },
   "renameTaskContextMenu": {
     "message": "Renommer"
